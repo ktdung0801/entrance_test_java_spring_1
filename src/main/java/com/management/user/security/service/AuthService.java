@@ -120,11 +120,11 @@ public class AuthService {
                 .orElseThrow();
 
         String jwtToken = jwtUtils.generateToken(user);
-        updateUserToken(token, refreshToken);
+        Tokens savedToken = updateUserToken(token);
 
         return TokenResponseDto.builder()
                 .token(jwtToken)
-                .refreshToken(refreshToken)
+                .refreshToken(savedToken.getRefreshToken())
                 .build();
     }
 
@@ -132,8 +132,9 @@ public class AuthService {
         var token = Tokens.builder()
                 .userId(user.getId())
                 .createAt(Instant.now())
-                .expiresIn(Instant.now().plusMillis(refreshTokenDurationMs))
+                .expiresIn(Instant.now().plusMillis(jwtExpirationMs))
                 .refreshToken(UUID.randomUUID().toString())
+                .refreshExpiresIn(Instant.now().plusMillis(refreshTokenDurationMs))
                 .build();
         return tokenRepository.save(token);
     }
@@ -141,13 +142,7 @@ public class AuthService {
     private Tokens updateUserToken(Tokens token) {
         token.setUpdateAt(Instant.now());
         token.setRefreshToken(UUID.randomUUID().toString());
-        token.setExpiresIn(Instant.now().plusMillis(refreshTokenDurationMs));
-        return tokenRepository.save(token);
-    }
-
-    private Tokens updateUserToken(Tokens token, String refreshToken) {
-        token.setUpdateAt(Instant.now());
-        token.setRefreshToken(refreshToken);
+        token.setRefreshExpiresIn(Instant.now().plusMillis(refreshTokenDurationMs));
         return tokenRepository.save(token);
     }
 
@@ -157,7 +152,7 @@ public class AuthService {
                 new Exception("Token is not in database")
         );
 
-        if(token.getExpiresIn().compareTo(Instant.now()) < 0) {
+        if(token.getRefreshExpiresIn().compareTo(Instant.now()) < 0) {
             token.setRefreshToken("");
             tokenRepository.save(token);
             throw new Exception("Refresh token was expired. Please make a new sign-in request");

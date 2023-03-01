@@ -30,7 +30,6 @@ public class SecurityConfiguration {
                         "/sign-up", "/sign-in", "/refresh-token"
                 )
                 .permitAll()
-                .requestMatchers("/sign-out").hasAnyAuthority(Role.ADMIN.name(), Role.USER.name())
                 .anyRequest()
                 .authenticated()
                 .and()

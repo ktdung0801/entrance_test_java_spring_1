@@ -35,6 +35,8 @@ public class Tokens {
 
     private Instant expiresIn;
 
+    private Instant refreshExpiresIn;
+
     private Instant createAt;
 
     private Instant updateAt;
