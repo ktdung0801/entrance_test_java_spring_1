@@ -30,7 +30,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthServiceInterface {
 
     private final UsersRepository usersRepository;
 
@@ -48,6 +48,7 @@ public class AuthService {
     @Value("${auth.app.jwtRefreshExpirationMs}")
     private Long refreshTokenDurationMs;
 
+    @Override
     public UserResponseDto register(UserRegisterRequest requestUser) {
 
         if (usersRepository.findByEmail(requestUser.getEmail()).isPresent()) {
@@ -74,6 +75,7 @@ public class AuthService {
                 .build();
     }
 
+    @Override
     public UserAuthenticationResponse authenticate(UserAuthenticationRequest requestUser) {
 
         authenticationManager.authenticate(
@@ -105,12 +107,14 @@ public class AuthService {
                .build();
     }
 
+    @Override
     @Transactional
     public void logoutUser() {
         Users userDetails = (Users) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         tokenRepository.deleteByUserId(userDetails.getId());
     }
 
+    @Override
     public TokenResponseDto refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
         Tokens token = verifyExpiration(refreshToken);
