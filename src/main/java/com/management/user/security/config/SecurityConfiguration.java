@@ -1,6 +1,5 @@
 package com.management.user.security.config;
 
-import com.management.user.entity.enums.Role;
 import com.management.user.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 public class UserAuthenticationRequest {
 
     @NotEmpty
-    @Email
+    @Email(message = "Email must be in correct email format")
     private String email;
 
     @NotEmpty
-    @Size(min = 8, max = 20)
+    @Size(min = 8, max = 20, message = "Password must be between 8-20 characters")
     private String password;
 }

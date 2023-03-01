@@ -9,6 +9,8 @@ import com.management.user.controller.dto.UserResponseDto;
 import com.management.user.entity.Tokens;
 import com.management.user.entity.Users;
 import com.management.user.entity.enums.Role;
+import com.management.user.exception.custom.ExistedEmailException;
+import com.management.user.exception.custom.TokenNotFoundException;
 import com.management.user.repository.TokenRepository;
 import com.management.user.repository.UsersRepository;
 import com.management.user.security.jwt.JwtUtils;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,10 +48,10 @@ public class AuthService {
     @Value("${auth.app.jwtRefreshExpirationMs}")
     private Long refreshTokenDurationMs;
 
-    public UserResponseDto register(UserRegisterRequest requestUser) throws Exception {
+    public UserResponseDto register(UserRegisterRequest requestUser) {
 
         if (usersRepository.findByEmail(requestUser.getEmail()).isPresent()) {
-            throw new Exception("An account is already registered with this email address");
+            throw new ExistedEmailException("An account is already registered with this email address");
         }
 
         Users newUser = Users.builder().
@@ -81,7 +84,7 @@ public class AuthService {
         );
 
        Users user = usersRepository.findByEmail(requestUser.getEmail())
-               .orElseThrow();
+               .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         String jwtToken = jwtUtils.generateToken(user);
         Optional<Tokens> existedToken = tokenRepository.findTokenByUserId(user.getId());
@@ -97,12 +100,8 @@ public class AuthService {
                                .displayName(user.getFullName())
                                .build()
                )
-               .token(
-                       TokenResponseDto.builder()
-                               .token(jwtToken)
-                               .refreshToken(savedToken.getRefreshToken())
-                               .build()
-               )
+               .token(jwtToken)
+               .refreshToken(savedToken.getRefreshToken())
                .build();
     }
 
@@ -112,7 +111,7 @@ public class AuthService {
         tokenRepository.deleteByUserId(userDetails.getId());
     }
 
-    public TokenResponseDto refreshToken(RefreshTokenRequest request) throws Exception {
+    public TokenResponseDto refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
         Tokens token = verifyExpiration(refreshToken);
 
@@ -146,16 +145,16 @@ public class AuthService {
         return tokenRepository.save(token);
     }
 
-    private Tokens verifyExpiration(String refreshToken) throws Exception {
+    private Tokens verifyExpiration(String refreshToken) {
 
         Tokens token = tokenRepository.findTokenByRefreshToken(refreshToken).orElseThrow(() ->
-                new Exception("Token is not in database")
+                new TokenNotFoundException("Token is not in database")
         );
 
         if(token.getRefreshExpiresIn().compareTo(Instant.now()) < 0) {
             token.setRefreshToken("");
             tokenRepository.save(token);
-            throw new Exception("Refresh token was expired. Please make a new sign-in request");
+            throw new TokenNotFoundException("Refresh token was expired. Please make a new sign-in request");
         }
 
         return token;

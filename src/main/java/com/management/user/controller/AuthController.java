@@ -9,9 +9,11 @@ import com.management.user.controller.dto.UserResponseDto;
 import com.management.user.security.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,8 +25,8 @@ public class AuthController {
     @PostMapping("/sign-up")
     public ResponseEntity<UserResponseDto> saveUser(
             @Valid @RequestBody UserRegisterRequest user
-    ) throws Exception {
-        return ResponseEntity.ok(authService.register(user));
+    ) {
+        return new ResponseEntity<>(authService.register(user), HttpStatus.CREATED);
     }
 
     @PostMapping("/sign-in")
@@ -37,13 +39,13 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<TokenResponseDto> refreshToken(
             @Valid @RequestBody RefreshTokenRequest request
-    ) throws Exception {
+    ) {
         return ResponseEntity.ok(authService.refreshToken(request));
     }
 
     @PostMapping("/sign-out")
-    public ResponseEntity<String>logoutUser () {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logoutUser () {
         authService.logoutUser();
-        return ResponseEntity.ok("Log out successful!");
     }
 }
