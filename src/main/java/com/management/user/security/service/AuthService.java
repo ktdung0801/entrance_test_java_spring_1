@@ -148,7 +148,7 @@ public class AuthService {
     private Tokens verifyExpiration(String refreshToken) {
 
         Tokens token = tokenRepository.findTokenByRefreshToken(refreshToken).orElseThrow(() ->
-                new TokenNotFoundException("Token is not in database")
+                new TokenNotFoundException("Token does not exist")
         );
 
         if(token.getRefreshExpiresIn().compareTo(Instant.now()) < 0) {
